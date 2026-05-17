@@ -1,0 +1,16 @@
+[Unit]
+Description=ServerCtrl Monitor Daemon
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+User=root
+ExecStart=/usr/bin/python3 /usr/local/bin/srvctrl-monitor.py
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+{
+  "appId": "com.serverctrl.app",
+  "appName": "ServerCtrl",
+  "webDir": "www",
+  "server": {
+    "cleartext": true
+  }
+}

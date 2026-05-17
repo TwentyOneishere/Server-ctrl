@@ -1,0 +1,15 @@
+{
+  "name": "server-ctrl",
+  "version": "2.0.0",
+  "description": "Android app for home server management via SSH",
+  "scripts": {
+    "build": "echo ok"
+  },
+  "dependencies": {
+    "@capacitor/android": "4.8.1",
+    "@capacitor/core": "4.8.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "4.8.1"
+  }
+}

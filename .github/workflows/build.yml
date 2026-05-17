@@ -1,0 +1,74 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Setup Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Add Android platform
+        run: npx cap add android
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Copy native plugin files
+        run: |
+          JAVA_DIR="android/app/src/main/java/com/serverctrl/app"
+          cp android-plugin/SSHPlugin.java        $JAVA_DIR/SSHPlugin.java
+          cp android-plugin/BackgroundService.java $JAVA_DIR/BackgroundService.java
+          cp android-plugin/BackgroundPlugin.java  $JAVA_DIR/BackgroundPlugin.java
+          cp android-plugin/MainActivity.java      $JAVA_DIR/MainActivity.java
+          echo "=== Plugin files ==="
+          ls -la $JAVA_DIR/
+
+      - name: Add dependencies to app/build.gradle
+        run: |
+          sed -i "/dependencies {/a\\    implementation 'com.jcraft:jsch:0.1.55'\n    implementation 'androidx.biometric:biometric:1.1.0'\n    implementation 'androidx.core:core:1.9.0'" android/app/build.gradle
+          echo "=== Dependencies added ==="
+
+      - name: Copy monitor script to assets
+        run: |
+          mkdir -p android/app/src/main/assets
+          cp scripts/serverctrl-monitor.sh android/app/src/main/assets/serverctrl-monitor.sh
+
+      - name: Add permissions to AndroidManifest
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />\n    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.USE_BIOMETRIC" />\n    <uses-permission android:name="android.permission.USE_FINGERPRINT" />\n    <uses-feature android:name="android.hardware.fingerprint" android:required="false" />\n</manifest>|' $MANIFEST
+          # Register background service in manifest
+          sed -i 's|</application>|    <service android:name=".BackgroundService" android:exported="false" android:foregroundServiceType="dataSync" />\n    </application>|' $MANIFEST
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon -Dorg.gradle.jvmargs="-Xmx1g"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ServerCtrl-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
