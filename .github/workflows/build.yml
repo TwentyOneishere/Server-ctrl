@@ -45,8 +45,10 @@ jobs:
 
       - name: Add dependencies to app/build.gradle
         run: |
-          sed -i "/dependencies {/a\\    implementation 'com.jcraft:jsch:0.1.55'\n    implementation 'androidx.biometric:biometric:1.1.0'\n    implementation 'androidx.core:core:1.9.0'" android/app/build.gradle
+          # Doar jsch si biometric - core:1.9.0 e inclus de biometric tranzitiv
+          sed -i "/dependencies {/a\\    implementation 'com.jcraft:jsch:0.1.55'\n    implementation 'androidx.biometric:biometric:1.1.0'" android/app/build.gradle
           echo "=== Dependencies added ==="
+          grep "implementation" android/app/build.gradle | head -10
 
       - name: Copy monitor script to assets
         run: |
@@ -57,7 +59,6 @@ jobs:
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />\n    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.USE_BIOMETRIC" />\n    <uses-permission android:name="android.permission.USE_FINGERPRINT" />\n    <uses-feature android:name="android.hardware.fingerprint" android:required="false" />\n</manifest>|' $MANIFEST
-          # Register background service in manifest
           sed -i 's|</application>|    <service android:name=".BackgroundService" android:exported="false" android:foregroundServiceType="dataSync" />\n    </application>|' $MANIFEST
 
       - name: Build debug APK

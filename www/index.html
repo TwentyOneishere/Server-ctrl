@@ -667,6 +667,15 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .loading-text{color:var(--muted);font-size:11px;text-align:center;padding:30px 20px;line-height:1.8;}
 .empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:12px;}
 .empty-icon{font-size:40px;margin-bottom:12px;}
+
+/* DEBUG CONSOLE */
+#debug-console{position:fixed;bottom:80px;left:0;right:0;max-height:200px;overflow-y:auto;background:rgba(0,0,0,0.92);border-top:2px solid #ff2244;z-index:9998;font-family:monospace;font-size:10px;padding:4px 8px;display:none;}
+#debug-console.show{display:block;}
+.dbg-err{color:#ff6666;}
+.dbg-warn{color:#ffaa00;}
+.dbg-log{color:#88ff88;}
+#debug-toggle{position:fixed;bottom:82px;right:8px;background:#ff2244;color:white;border:none;border-radius:6px;padding:4px 8px;font-size:10px;z-index:9999;cursor:pointer;}
+
 </style>
 </head>
 <body>
@@ -1159,6 +1168,56 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <div class="toast" id="toast-el"></div>
 
 <script>
+
+// DEBUG CONSOLE
+var dbgEl = null;
+var dbgVisible = false;
+function toggleDebug(){
+  dbgEl = dbgEl || document.getElementById('debug-console');
+  dbgVisible = !dbgVisible;
+  dbgEl.classList.toggle('show', dbgVisible);
+}
+function dbgLog(msg, type){
+  dbgEl = dbgEl || document.getElementById('debug-console');
+  if(!dbgEl) return;
+  var d = document.createElement('div');
+  d.className = 'dbg-' + (type||'log');
+  d.textContent = new Date().toLocaleTimeString() + ' ' + msg;
+  dbgEl.appendChild(d);
+  dbgEl.scrollTop = dbgEl.scrollHeight;
+}
+
+// Override console
+var _origError = console.error.bind(console);
+var _origWarn = console.warn.bind(console);
+var _origLog = console.log.bind(console);
+console.error = function(){dbgLog(Array.from(arguments).join(' '),'err'); _origError.apply(console,arguments);};
+console.warn = function(){dbgLog(Array.from(arguments).join(' '),'warn'); _origWarn.apply(console,arguments);};
+console.log = function(){dbgLog(Array.from(arguments).join(' '),'log'); _origLog.apply(console,arguments);};
+
+// Catch global errors
+window.onerror = function(msg, src, line, col, err){
+  dbgLog('ERROR: ' + msg + ' (line ' + line + ')', 'err');
+  return false;
+};
+window.onunhandledrejection = function(e){
+  dbgLog('PROMISE: ' + (e.reason||e), 'err');
+};
+
+// Test key functions at startup
+setTimeout(function(){
+  var fns = ['switchTab','openOverlay','closeOverlay','toast','loadServers','g'];
+  fns.forEach(function(fn){
+    if(typeof window[fn] === 'undefined'){
+      dbgLog('MISSING: ' + fn + '()', 'err');
+    } else {
+      dbgLog('OK: ' + fn + '()', 'log');
+    }
+  });
+  dbgLog('JS loaded OK', 'log');
+}, 500);
+
+
 // ═══════════════════════════════════════════════════
 // PLUGINS
 // ═══════════════════════════════════════════════════
@@ -2278,6 +2337,10 @@ checkLock();
     <textarea id="editor-textarea" style="flex:1;background:#060608;border:none;outline:none;color:#88ff88;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;padding:16px;resize:none;-webkit-user-select:text;user-select:text;overflow-y:auto;min-height:0;"></textarea>
   </div>
 </div>
+
+
+<button id="debug-toggle" onclick="toggleDebug()">🐛 Debug</button>
+<div id="debug-console"></div>
 
 </body>
 </html>
