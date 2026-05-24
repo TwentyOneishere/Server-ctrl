@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { background:#111; color:#fff; font-family:monospace; padding:20px; }
+.test-div { background:#222; border:1px solid #444; padding:20px; margin:10px 0; border-radius:8px; }
+button { background:#00ff88; color:#000; border:none; padding:12px 24px; border-radius:8px; font-size:16px; cursor:pointer; width:100%; margin:5px 0; }
+#log { background:#000; padding:10px; border-radius:8px; font-size:12px; color:#88ff88; min-height:100px; margin-top:20px; }
+</style>
+</head>
+<body>
+
+<h2>Tap Test</h2>
+
+<!-- Test 1: button normal -->
+<button onclick="log('BUTTON onclick OK')">1. Button onclick</button>
+
+<!-- Test 2: div cu onclick -->
+<div class="test-div" onclick="log('DIV onclick OK')">2. Div onclick (tap here)</div>
+
+<!-- Test 3: div cu addEventListener -->
+<div class="test-div" id="div-listener">3. Div addEventListener (tap here)</div>
+
+<!-- Test 4: div cu cursor:pointer -->
+<div class="test-div" style="cursor:pointer;" onclick="log('DIV cursor:pointer OK')">4. Div + cursor:pointer</div>
+
+<!-- Test 5: button ca div -->
+<button style="background:#333;color:#fff;text-align:left;" onclick="log('BUTTON styled OK')">5. Button styled as div</button>
+
+<div id="log">Tap something above...<br></div>
+
+<script>
+function log(msg) {
+  var el = document.getElementById('log');
+  el.innerHTML += new Date().toLocaleTimeString() + ': ' + msg + '<br>';
+  el.scrollTop = el.scrollHeight;
+}
+
+document.getElementById('div-listener').addEventListener('click', function() {
+  log('DIV addEventListener OK');
+});
+
+document.getElementById('div-listener').addEventListener('touchend', function(e) {
+  log('DIV touchend OK');
+}, {passive:true});
+
+// Log all clicks on body
+document.body.addEventListener('click', function(e) {
+  log('BODY click on: ' + e.target.tagName + ' id=' + e.target.id);
+});
+
+log('Script loaded OK');
+</script>
+</body>
+</html>
